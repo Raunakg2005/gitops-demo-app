@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: gitops-demo
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+
+# In GitOps, the image tag can be bumped declaratively here:
+images:
+  - name: ghcr.io/raunakg2005/gitops-demo-app
+    newTag: v1.0

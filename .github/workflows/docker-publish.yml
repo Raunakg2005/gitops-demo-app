@@ -1,0 +1,77 @@
+name: Build & Publish Container Images
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*'
+  workflow_dispatch:
+    inputs:
+      publish_tags:
+        description: 'Publish both v1.0 and v2.0 images'
+        required: true
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build & Push to GHCR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU for Multi-Architecture Builds
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase Repository Owner Name
+        id: repo_owner
+        run: |
+          echo "OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------------------------
+      # Build & Push v1.0 (Stable Release)
+      # ------------------------------------------------------------------------
+      - name: Build and Push Docker Image (v1.0)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            APP_VERSION=v1.0
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.OWNER }}/gitops-demo-app:v1.0
+            ghcr.io/${{ steps.repo_owner.outputs.OWNER }}/gitops-demo-app:latest
+
+      # ------------------------------------------------------------------------
+      # Build & Push v2.0 (Feature Release)
+      # ------------------------------------------------------------------------
+      - name: Build and Push Docker Image (v2.0)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            APP_VERSION=v2.0
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.OWNER }}/gitops-demo-app:v2.0

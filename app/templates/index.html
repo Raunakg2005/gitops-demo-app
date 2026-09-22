@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitOps Demo App - {{ version }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #090d16;
+            --card-bg: rgba(18, 26, 43, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            
+            /* Version 1.0 Theme: Emerald / Cyan */
+            --accent-v1: #10b981;
+            --accent-v1-glow: rgba(16, 185, 129, 0.25);
+            --badge-v1-bg: rgba(16, 185, 129, 0.15);
+            --badge-v1-border: rgba(16, 185, 129, 0.4);
+
+            /* Version 2.0 Theme: Electric Violet / Indigo */
+            --accent-v2: #8b5cf6;
+            --accent-v2-glow: rgba(139, 92, 246, 0.3);
+            --badge-v2-bg: rgba(139, 92, 246, 0.18);
+            --badge-v2-border: rgba(139, 92, 246, 0.5);
+
+            --accent: {% if is_v2 %}var(--accent-v2){% else %}var(--accent-v1){% endif %};
+            --accent-glow: {% if is_v2 %}var(--accent-v2-glow){% else %}var(--accent-v1-glow){% endif %};
+            --badge-bg: {% if is_v2 %}var(--badge-v2-bg){% else %}var(--badge-v1-bg){% endif %};
+            --badge-border: {% if is_v2 %}var(--badge-v2-border){% else %}var(--badge-v1-border){% endif %};
+        }
+
+        * {
+            box-ir: border-box;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% -20%, var(--accent-glow) 0%, transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(30, 41, 59, 0.5) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2.5rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 860px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        /* Top Header */
+        header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-dim);
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+        }
+
+        .brand-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff 30%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            max-width: 580px;
+            line-height: 1.5;
+        }
+
+        /* Hero Version Badge */
+        .version-badge-container {
+            display: flex;
+            justify-content: center;
+            margin: 0.5rem 0;
+        }
+
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.85rem;
+            background: var(--badge-bg);
+            border: 2px solid var(--badge-border);
+            padding: 0.75rem 1.75rem;
+            border-radius: 100px;
+            box-shadow: 0 10px 30px -10px var(--accent-glow);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .version-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px -8px var(--accent-glow);
+        }
+
+        .version-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+
+        .version-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+            padding-left: 0.85rem;
+            border-left: 1px solid var(--badge-border);
+        }
+
+        /* Glass Cards */
+        .glass-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.85rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+            word-break: break-all;
+        }
+
+        /* Probe & Architecture Info */
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .architecture-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; }
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.15rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .info-box-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-box-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .info-box-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .check-icon {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Endpoints Test Bar */
+        .api-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 0.75rem 1.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .api-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .api-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        footer strong {
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <span class="brand-dot"></span>
+                <span>ArgoCD GitOps • Kubernetes Pipeline</span>
+            </div>
+            <h1>GitOps Microservice</h1>
+            <p class="subtitle">
+                Automated continuous delivery demo featuring rolling zero-downtime deployments managed declaratively by ArgoCD.
+            </p>
+
+            <div class="version-badge-container">
+                <div class="version-badge">
+                    <span class="version-tag">{{ version }}</span>
+                    <span class="version-label">
+                        {% if is_v2 %}
+                            🚀 Feature Release • V2 Active
+                        {% else %}
+                            🌱 Production Stable • V1 Active
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Cluster Telemetry Panel -->
+        <div class="glass-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    Kubernetes Pod Telemetry
+                </div>
+                <div class="status-pill">
+                    <span class="brand-dot" style="animation-duration: 1.2s;"></span>
+                    HTTP 200 OK
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">Pod Instance</span>
+                    <span class="metric-value" id="val-pod">{{ pod_name }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Namespace</span>
+                    <span class="metric-value">{{ pod_namespace }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Cluster Node</span>
+                    <span class="metric-value">{{ node_name }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Pod IP Address</span>
+                    <span class="metric-value">{{ pod_ip }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Service Uptime</span>
+                    <span class="metric-value" id="val-uptime">{{ uptime }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Server Timestamp</span>
+                    <span class="metric-value" style="font-size: 0.85rem;">{{ current_time }}</span>
+                </div>
+            </div>
+
+            <div class="architecture-grid">
+                <div class="info-box">
+                    <div class="info-box-title">Kubernetes Health Probes</div>
+                    <ul class="info-box-list">
+                        <li><span class="check-icon">✓</span> <strong>Readiness Probe:</strong> <code>GET /health</code> (port 8080)</li>
+                        <li><span class="check-icon">✓</span> <strong>Liveness Probe:</strong> <code>GET /health</code> (port 8080)</li>
+                        <li><span class="check-icon">✓</span> <strong>Replicas:</strong> 2 pods behind ClusterIP / NodePort</li>
+                        <li><span class="check-icon">✓</span> <strong>Strategy:</strong> RollingUpdate (0 downtime)</li>
+                    </ul>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-title">Packaging & Security Profile</div>
+                    <ul class="info-box-list">
+                        <li><span class="check-icon">✓</span> <strong>Build:</strong> Multi-stage Docker image (&lt; 80MB)</li>
+                        <li><span class="check-icon">✓</span> <strong>User:</strong> Non-root (UID 10001: <code>appuser</code>)</li>
+                        <li><span class="check-icon">✓</span> <strong>Registry:</strong> GitHub Container Registry (GHCR)</li>
+                        <li><span class="check-icon">✓</span> <strong>GitOps Sync:</strong> ArgoCD Auto-Prune & Self-Heal</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Verification Bar -->
+        <div class="api-bar">
+            <span>Verify Liveness / Readiness Endpoint:</span>
+            <a href="/health" target="_blank" class="api-link">
+                <code>GET /health</code> →
+            </a>
+        </div>
+        <div class="api-bar">
+            <span>View Full Machine-Readable Metadata:</span>
+            <a href="/api/info" target="_blank" class="api-link">
+                <code>GET /api/info</code> →
+            </a>
+        </div>
+
+        <footer>
+            <strong>ArgoCD GitOps Academic CA Project</strong> • Application Packaging & Kubernetes Manifests<br>
+            Multi-stage Dockerfile • Automated Sync • Zero Downtime Rolling Deployment
+        </footer>
+    </div>
+</body>
+</html>

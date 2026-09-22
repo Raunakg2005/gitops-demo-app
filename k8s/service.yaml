@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitops-demo-service
+  namespace: gitops-demo
+  labels:
+    app.kubernetes.io/name: gitops-demo-app
+    app.kubernetes.io/instance: gitops-demo
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: gitops-pipeline
+    app.kubernetes.io/managed-by: argocd
+spec:
+  # NodePort provides convenient direct access on local clusters (Minikube, kind, Docker Desktop, k3s).
+  # Change to 'ClusterIP' for internal-only ingress routing in cloud production environments.
+  type: NodePort
+  selector:
+    app: gitops-demo-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+      nodePort: 30080
