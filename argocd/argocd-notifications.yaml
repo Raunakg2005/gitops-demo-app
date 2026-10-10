@@ -1,0 +1,69 @@
+# kubectl apply -n argocd -f argocd/argocd-notifications.yaml
+# Requires the argocd-notifications controller (bundled in Argo CD >= 2.3).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-notifications-secret
+  namespace: argocd
+stringData:
+  slack-token: "xoxb-REPLACE_ME"
+  discord-webhook-url: "https://discord.com/api/webhooks/REPLACE/ME"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  # ---- Services ----
+  service.slack: |
+    token: $slack-token
+  service.webhook.discord: |
+    url: $discord-webhook-url
+    headers:
+      - name: Content-Type
+        value: application/json
+
+  # ---- Templates ----
+  template.app-degraded: |
+    message: |
+      :red_circle: *{{.app.metadata.name}}* is *Degraded*
+      Health: {{.app.status.health.status}} | Sync: {{.app.status.sync.status}}
+      {{.context.argocdUrl}}/applications/{{.app.metadata.name}}
+    slack:
+      attachments: |
+        [{"title": "{{.app.metadata.name}}", "color": "#E96D76",
+          "fields": [{"title": "Health", "value": "{{.app.status.health.status}}", "short": true},
+                     {"title": "Revision", "value": "{{.app.status.sync.revision}}", "short": true}]}]
+  template.app-outofsync: |
+    message: |
+      :warning: *{{.app.metadata.name}}* is *OutOfSync*
+      {{.context.argocdUrl}}/applications/{{.app.metadata.name}}
+    slack:
+      attachments: |
+        [{"title": "{{.app.metadata.name}}", "color": "#f4c030"}]
+  template.app-degraded-discord: |
+    webhook:
+      discord:
+        method: POST
+        body: |
+          {"content": "🔴 **{{.app.metadata.name}}** is Degraded (sync: {{.app.status.sync.status}}) {{.context.argocdUrl}}/applications/{{.app.metadata.name}}"}
+  template.app-outofsync-discord: |
+    webhook:
+      discord:
+        method: POST
+        body: |
+          {"content": "⚠️ **{{.app.metadata.name}}** is OutOfSync {{.context.argocdUrl}}/applications/{{.app.metadata.name}}"}
+
+  # ---- Triggers ----
+  trigger.on-health-degraded: |
+    - when: app.status.health.status == 'Degraded'
+      send: [app-degraded, app-degraded-discord]
+  trigger.on-sync-status-outofsync: |
+    - when: app.status.sync.status == 'OutOfSync'
+      oncePer: app.status.sync.revision
+      send: [app-outofsync, app-outofsync-discord]
+
+  # Link target used in messages
+  context: |
+    argocdUrl: https://argocd.example.com

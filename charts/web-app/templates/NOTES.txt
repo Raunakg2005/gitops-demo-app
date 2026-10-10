@@ -1,0 +1,2 @@
+{{ include "web-app.fullname" . }} deployed with image {{ include "web-app.image" . }}.
+Port-forward: kubectl port-forward svc/{{ include "web-app.fullname" . }} 8080:{{ .Values.service.port }}

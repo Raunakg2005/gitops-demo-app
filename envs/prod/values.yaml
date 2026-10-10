@@ -1,0 +1,5 @@
+# Lives in the GitOps CONFIG repo. CI rewrites image.tag on every push to main.
+replicaCount: 2
+image:
+  repository: ghcr.io/your-org/web-app
+  tag: "initial"

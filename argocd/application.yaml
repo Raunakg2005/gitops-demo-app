@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web-app
+  namespace: argocd
+  annotations:
+    # Notification subscriptions (channels defined in argocd-notifications-cm)
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: gitops-alerts
+    notifications.argoproj.io/subscribe.on-sync-status-outofsync.slack: gitops-alerts
+    # Discord alternative:
+    # notifications.argoproj.io/subscribe.on-health-degraded.discord: ""
+    # notifications.argoproj.io/subscribe.on-sync-status-outofsync.discord: ""
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/web-app-gitops.git
+    targetRevision: main
+    path: charts/web-app
+    helm:
+      valueFiles:
+        - ../../envs/prod/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: web-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

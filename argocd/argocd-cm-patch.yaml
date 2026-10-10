@@ -1,0 +1,26 @@
+# kubectl -n argocd patch cm argocd-cm --patch-file argocd/argocd-cm-patch.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  # Polling stays as a safety net; webhook handles the fast path.
+  timeout.reconciliation: 180s
+
+  # Example custom health check (cert-manager Certificate). Add more per CRD.
+  resource.customizations.health.cert-manager.io_Certificate: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = "Waiting for certificate"
+    if obj.status ~= nil and obj.status.conditions ~= nil then
+      for _, c in ipairs(obj.status.conditions) do
+        if c.type == "Ready" and c.status == "False" then
+          hs.status = "Degraded"; hs.message = c.message; return hs
+        end
+        if c.type == "Ready" and c.status == "True" then
+          hs.status = "Healthy"; hs.message = c.message; return hs
+        end
+      end
+    end
+    return hs
