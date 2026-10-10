@@ -1,0 +1,23 @@
+# Stage 2 (final): automated sync with pruning and self-healing.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitops-demo
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Raunakg2005/gitops-demo-ap.git
+    targetRevision: HEAD
+    path: k8s            # TODO: confirm with Student 1 (folder holding the manifests)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitops-demo
+  syncPolicy:
+    automated:
+      prune: true        # delete resources removed from Git
+      selfHeal: true     # revert manual drift in the cluster
+    syncOptions:
+      - CreateNamespace=true
