@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: gitops-demo-app
     app.kubernetes.io/instance: gitops-demo
-    app.kubernetes.io/version: "v1.0"
+    app.kubernetes.io/version: "v2.0"
     app.kubernetes.io/component: web
     app.kubernetes.io/part-of: gitops-pipeline
     app.kubernetes.io/managed-by: argocd
@@ -25,7 +25,7 @@ spec:
     metadata:
       labels:
         app: gitops-demo-app
-        version: "v1.0"
+        version: "v2.0"
     spec:
       securityContext:
         runAsNonRoot: true
@@ -34,7 +34,7 @@ spec:
         fsGroup: 10001
       containers:
         - name: web-app
-          image: ghcr.io/raunakg2005/gitops-demo-app:v1.0
+          image: ghcr.io/raunakg2005/gitops-demo-app:v2.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -42,7 +42,7 @@ spec:
               protocol: TCP
           env:
             - name: APP_VERSION
-              value: "v1.0"
+              value: "v2.0"
             - name: PORT
               value: "8080"
             - name: ENVIRONMENT
