@@ -11,4 +11,4 @@ resources:
 # In GitOps, the image tag can be bumped declaratively here:
 images:
   - name: ghcr.io/raunakg2005/gitops-demo-app
-    newTag: v2.0
+    newTag: v1.0
